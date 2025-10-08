@@ -6,3 +6,67 @@ import sqlite3
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+#paso2
+header = {'User-Agent': 'my-app/0.0.1'}
+resource_url = "https://en.wikipedia.org/wiki/List_of_Spotify_streaming_records"
+response = requests.get(resource_url, time.sleep(3), headers= header)
+response
+
+#paso3
+if response:
+    soup = BeautifulSoup(response.text, 'html.parser')
+    #tables = soup.find('table')
+    #tables
+    tables = pd.read_html(str(soup))
+    #print(len(tables))
+    #print(tables[0].head())
+df = tables[0]
+df.head()
+
+#paso4
+df.columns = [col.strip().replace('\n', ' ').replace('  ', ' ') for col in df.columns]
+df = df.drop(columns=['Ref.'])
+df['Release date'] = pd.to_datetime(df['Release date'], errors ='coerce')
+df['Release date'] = df['Release date'].dt.strftime('%d/%m/%Y')
+df
+
+#Paso 5
+dfsql = sqlite3.connect('spotify_top_canciones.db')
+df.to_sql('mas_sonados', dfsql, if_exists = 'replace', index= False)
+cursor = dfsql.cursor()
+dfsql.commit()
+#dfsql.close()
+
+#Paso 6. Mostrar los resultados
+cursor.execute("SELECT * FROM mas_sonados")
+result = cursor.fetchall()
+for row in result:
+    print(row)
+
+#Paso 6. Gráfico de barras con Matplotlip i Seaborn
+plt.figure(figsize=(8,5))
+sns.barplot(x='Song', y='Streams (billions)', data= df_top10, palette='viridis')
+plt.title('Top 10 songs with more streams')
+plt.xlabel('Songs')
+plt.ylabel('Streams(billions)')
+plt.xticks(rotation=45, ha='right')
+plt.tight_layout()
+plt.gca().invert_yaxis()
+plt.show()
+
+#Paso 6. Gráfico de líneas para ver como evolucionan los streams según las fechas de lanzamiento.
+df['Streams (billions)'] = df['Streams (billions)'].astype(float)
+
+df['Release date'] = pd.to_datetime(df['Release date'], format = '%Y-%m-%d')
+
+df_time_sorted = df.sort_values('Release date')
+
+plt.figure(figsize=(10,6))
+plt.plot(df_time_sorted['Release date'], df_time_sorted['Streams (billions)'], marker='o', linestyle='-')
+plt.title('Streams over release year')
+plt.xlabel('Release date')
+plt.ylabel('Streams (billions)')
+plt.grid(True)
+for i, song in enumerate(df_time_sorted['Song']):
+    plt.annotate(song, (df_time_sorted['Release date'].iloc[i], df_time_sorted['Streams (billions)'].iloc[i]), fontsize=8, rotation=45)
+plt.show()
