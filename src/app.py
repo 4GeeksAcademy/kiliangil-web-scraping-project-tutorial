@@ -58,9 +58,8 @@ plt.show()
 #Paso 6. Gráfico de líneas para ver como evolucionan los streams según las fechas de lanzamiento.
 df['Streams (billions)'] = df['Streams (billions)'].astype(float)
 
-df['Release date'] = pd.to_datetime(df['Release date'], format = '%Y-%m-%d')
-
-df_time_sorted = df.sort_values('Release date')
+df['Release date'] = pd.to_datetime(df['Release date'], dayfirst=True)
+df_time_sorted = df.sort_values(by='Release date', ascending=False).head(10)
 
 plt.figure(figsize=(10,6))
 plt.plot(df_time_sorted['Release date'], df_time_sorted['Streams (billions)'], marker='o', linestyle='-')
@@ -68,6 +67,11 @@ plt.title('Streams over release year')
 plt.xlabel('Release date')
 plt.ylabel('Streams (billions)')
 plt.grid(True)
+plt.xticks(rotation=45)
+
 for i, song in enumerate(df_time_sorted['Song']):
-    plt.annotate(song, (df_time_sorted['Release date'].iloc[i], df_time_sorted['Streams (billions)'].iloc[i]), fontsize=8, rotation=45)
+    plt.annotate(song, (df_time_sorted['Release date'].iloc[i], df_time_sorted['Streams (billions)'].iloc[i]), fontsize=8, rotation= 45)
+
+plt.margins(x=0.1, y=0.13)
+plt.tight_layout()
 plt.show()
