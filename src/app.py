@@ -15,19 +15,16 @@ response
 #paso3
 if response:
     soup = BeautifulSoup(response.text, 'html.parser')
-    #tables = soup.find('table')
-    #tables
     tables = pd.read_html(str(soup))
-    #print(len(tables))
-    #print(tables[0].head())
 df = tables[0]
 df.head()
 
 #paso4
-df.columns = [col.strip().replace('\n', ' ').replace('  ', ' ') for col in df.columns]
-df = df.drop(columns=['Ref.'])
+df['Streams (billions)'] = pd.to_numeric(df['Streams (billions)'], errors='coerce')
 df['Release date'] = pd.to_datetime(df['Release date'], errors ='coerce')
+df = df.dropna(subset=['Streams (billions)', 'Release date'])
 df['Release date'] = df['Release date'].dt.strftime('%d/%m/%Y')
+df = df.drop(columns=['Ref.'])
 df
 
 #Paso 5
@@ -43,6 +40,11 @@ result = cursor.fetchall()
 for row in result:
     print(row)
 
+#Preparar los datos para la visualización
+df_top10 = df.sort_values(by='Streams (billions)', ascending=False).head(10)
+df_top10['Streams (billions)'].dtype
+df_top10
+
 #Paso 6. Gráfico de barras con Matplotlip i Seaborn
 plt.figure(figsize=(8,5))
 sns.barplot(x='Song', y='Streams (billions)', data= df_top10, palette='viridis')
@@ -51,7 +53,6 @@ plt.xlabel('Songs')
 plt.ylabel('Streams(billions)')
 plt.xticks(rotation=45, ha='right')
 plt.tight_layout()
-plt.gca().invert_yaxis()
 plt.show()
 
 #Paso 6. Gráfico de líneas para ver como evolucionan los streams según las fechas de lanzamiento.
